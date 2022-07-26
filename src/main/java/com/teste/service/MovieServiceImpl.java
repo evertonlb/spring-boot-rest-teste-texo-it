@@ -80,41 +80,40 @@ public class MovieServiceImpl implements MovieService {
 	private void calculateMaxMin(List<Movie> list){	
 		if(list.size()>=2){
 			Collections.sort(list, Movie.Comparators.YEAR);
-			Movie smaller=list.get(0);
-			Movie larger=list.get(list.size()-1);
-
-			SubResult subResultMax=movieToSubResult(smaller,larger);
-			Collections.reverse(listMax);
-			validateSubResultMax(subResultMax);
-
 			searchForShorterInterval(list);					
 		}
 	}
 
 	private void validateSubResultMax(SubResult subResultMax){
-		if(listMax.isEmpty()){
-			listMax.add(subResultMax);
-		}else if(subResultMax.getInterval().equals(listMax.get(0).getInterval())){
-			listMax.add(subResultMax);
-		}else if(subResultMax.getInterval()>listMax.get(0).getInterval()){
-			listMax.clear();
-			listMax.add(subResultMax);
+		if(!listMax.contains(subResultMax)){
+			if(listMax.isEmpty()){
+				listMax.add(subResultMax);
+			}else if(subResultMax.getInterval().equals(listMax.get(0).getInterval())){
+				listMax.add(subResultMax);
+			}else if(subResultMax.getInterval()>listMax.get(0).getInterval()){
+				listMax.clear();
+				listMax.add(subResultMax);
+			}
 		}
 	}
 
 	private void validateSubResultMin(SubResult subResultMin){
-		if(listMin.isEmpty()){
-			listMin.add(subResultMin);
-		}else if(subResultMin.getInterval().equals(listMin.get(0).getInterval())){
-			listMin.add(subResultMin);
-		}else if(subResultMin.getInterval()<listMin.get(0).getInterval()){
-			listMin.clear();
-			listMin.add(subResultMin);
+		if(!listMin.contains(subResultMin)){
+			if(listMin.isEmpty()){
+				listMin.add(subResultMin);
+			}else if(subResultMin.getInterval().equals(listMin.get(0).getInterval())){
+				listMin.add(subResultMin);
+			}else if(subResultMin.getInterval()<listMin.get(0).getInterval()){
+				listMin.clear();
+				listMin.add(subResultMin);
+			}
 		}
 	}
 
 	private void searchForShorterInterval(List<Movie> list){
 		Collections.sort(listMin);
+		Collections.reverse(listMax);
+
 		List<Integer> repeatedYears= new ArrayList<>();
 		for(int i=0;i<list.size();i++){
 			if(i+1<list.size() && list.get(i).getYear().equals(list.get(i+1).getYear())){
@@ -123,27 +122,36 @@ public class MovieServiceImpl implements MovieService {
 				}
 			}	
 		}
-		if(!repeatedYears.isEmpty()){		
-			try{			
-				Movie m;
-				SubResult sub;
-				for(Integer year: repeatedYears){
-					m=list.get(0).clone();
-					m.setYear(year);
-					sub=movieToSubResult(m,m);
+		try{	
+			if(!repeatedYears.isEmpty()){								
+					Movie m;
+					SubResult sub;
+					for(Integer year: repeatedYears){
+						m=list.get(0).clone();
+						m.setYear(year);
+						sub=movieToSubResult(m,m);
+
+						validateSubResultMin(sub);
+						validateSubResultMax(sub);
+					}			
+			}
+
+			Movie m1;
+			Movie m2;
+			SubResult sub;
+			for(int i=0;i<list.size();i++){
+				if(i+1<list.size()){
+					m1=list.get(i).clone();
+					m2=list.get(i+1).clone();
+					sub=movieToSubResult(m1,m2);
 
 					validateSubResultMin(sub);
-				}
-			}catch(CloneNotSupportedException e){
-				e.printStackTrace();
-			}	
-		}else{
-			Movie smaller=list.get(0);
-			Movie secondSmallest=list.get(1);
-			SubResult subResultMin=movieToSubResult(smaller,secondSmallest);
-			
-			validateSubResultMin(subResultMin);
-		}
+					validateSubResultMax(sub);
+				}	
+			}					
+		}catch(CloneNotSupportedException e){
+			e.printStackTrace();
+		}	
 	}
 	
 	private SubResult movieToSubResult(Movie smaller, Movie larger){
